@@ -34,26 +34,6 @@ def filtering_solutions(
 
     return filtered
 
-# 팀 최소 기준 평가
-def passes_minimum_criteria(team: List[Tuple[np.ndarray, str]]) -> bool:
-    """
-    팀이 최소 기준(친화성 유사도와 성실성 평균 또는 유사도)을 만족하는지 검사
-    """
-    team_vectors = np.array([vec for vec, _ in team])
-    conscientiousness_mean = team_vectors[:, 0].mean()
-    conscientiousness_std = team_vectors[:, 0].std()
-    agreeableness_std = team_vectors[:, 1].std()
-
-    # (1) 성실성 평균이 높고 친화성 유사도가 높을 때
-    if conscientiousness_mean >= 75 and agreeableness_std <= 5:
-        return True
-
-    # (2) 성실성과 친화성 모두 유사도가 높을 때
-    if conscientiousness_std <= 5 and agreeableness_std <= 5:
-        return True
-
-    return False
-
 # 팀 점수 계산
 def calculate_team_score(team: List[Tuple[np.ndarray, str]]) -> float:
     """
@@ -99,6 +79,26 @@ def calculate_team_score(team: List[Tuple[np.ndarray, str]]) -> float:
     score += (1 - abs(neuroticism_mean - 50) / 50) * weights["신경증 평균"]
 
     return round(score, 2)
+
+# 팀 최소 기준 평가
+def passes_minimum_criteria(team: List[Tuple[np.ndarray, str]]) -> bool:
+    """
+    팀이 최소 기준(친화성 유사도와 성실성 평균 또는 유사도)을 만족하는지 검사
+    """
+    team_vectors = np.array([vec for vec, _ in team])
+    conscientiousness_mean = team_vectors[:, 0].mean()
+    conscientiousness_std = team_vectors[:, 0].std()
+    agreeableness_std = team_vectors[:, 1].std()
+
+    # (1) 성실성 평균이 높고 친화성 유사도가 높을 때
+    if conscientiousness_mean >= 75 and agreeableness_std <= 5:
+        return True
+
+    # (2) 성실성과 친화성 모두 유사도가 높을 때
+    if conscientiousness_std <= 5 and agreeableness_std <= 5:
+        return True
+
+    return False
 
 # 솔루션 품질 평가
 def is_valid_solution(team_scores: List[float], avg_threshold: float, min_threshold: float) -> bool:
