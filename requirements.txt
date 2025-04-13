@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+python-jose[cryptography]
+kafka-python
+python-dotenv
+pydantic-settings
+coverage
+SQLAlchemy>=1.4
+asyncpg
+numpy
