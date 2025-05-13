@@ -60,7 +60,7 @@ def score_from_eval(key: str, eval: int, value: Decimal, thresholds: list, rever
     Eval 구간에 따라 점수 범위 내 선형 보간 점수 생성 (좋을수록 점수 높음)
     """
     eval_score_ranges = {
-        4: (Decimal(85), Decimal(100)),
+        4: (Decimal(85), Decimal(99)),
         3: (Decimal(70), Decimal(84)),
         2: (Decimal(55), Decimal(69)),
         1: (Decimal(40), Decimal(54)),
