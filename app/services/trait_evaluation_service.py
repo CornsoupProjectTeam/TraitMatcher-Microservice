@@ -1,6 +1,6 @@
 from typing import List, Tuple
 import numpy as np
-import math
+from decimal import Decimal
 
 VectorWithID = Tuple[np.ndarray, str]
 Team = List[VectorWithID]
@@ -39,10 +39,11 @@ BOUNDS_LIMITS = {
     "extraversionDiversity": (0.0, 300.0)
 }
 
-def get_eval(value: float, thresholds: list, reverse: bool) -> int:
+def get_eval(value: Decimal, thresholds: list, reverse: bool) -> int:
     """
     절대 평가 기준에 따라 1~4등급 계산
     """
+    thresholds = list(map(Decimal, thresholds))
     if reverse:
         if value <= thresholds[0]: return 4
         elif value <= thresholds[1]: return 3
@@ -54,21 +55,21 @@ def get_eval(value: float, thresholds: list, reverse: bool) -> int:
         elif value >= thresholds[2]: return 2
         else: return 1
 
-def score_from_eval(key: str, eval: int, value: float, thresholds: list, reverse: bool) -> float:
+def score_from_eval(key: str, eval: int, value: Decimal, thresholds: list, reverse: bool) -> float:
     """
     Eval 구간에 따라 점수 범위 내 선형 보간 점수 생성 (좋을수록 점수 높음)
     """
     eval_score_ranges = {
-        4: (85, 100),
-        3: (70, 84),
-        2: (55, 69),
-        1: (40, 54),
+        4: (Decimal(85), Decimal(100)),
+        3: (Decimal(70), Decimal(84)),
+        2: (Decimal(55), Decimal(69)),
+        1: (Decimal(40), Decimal(54)),
     }
 
     lower_score, upper_score = eval_score_ranges[eval]
 
-    lower_bound, upper_bound = BOUNDS_LIMITS[key]
-    bounds = [lower_bound] + thresholds + [upper_bound]
+    lower_bound, upper_bound = map(Decimal, BOUNDS_LIMITS[key])
+    bounds = [lower_bound] + list(map(Decimal, thresholds)) + [upper_bound]
 
     idx = eval - 1
     bound_low = bounds[idx]
@@ -76,23 +77,23 @@ def score_from_eval(key: str, eval: int, value: float, thresholds: list, reverse
 
     denom = bound_high - bound_low
     if denom <= 0:
-        ratio = 0.5
+        ratio = Decimal("0.5")
     else:
         ratio = (value - bound_low) / denom
-        ratio = min(max(ratio, 0), 1)
+        ratio = min(max(ratio, Decimal("0.0")), Decimal("1.0"))
 
-    score = lower_score + (upper_score - lower_score) * (1 - ratio if reverse else ratio)
-    return round(score, 2)
+    score = lower_score + (upper_score - lower_score) * (Decimal(1) - ratio if reverse else ratio)
+    return float(round(score, 2))
 
-def grade_relative(score: float, avg: float) -> int:
+def grade_relative(score: Decimal, avg: Decimal) -> int:
     """
     상대 평가: 전역 평균을 기준으로 4단계 등급 평가
     """
-    if score >= avg + 10:
+    if score >= avg + Decimal(10):
         return 4
     elif score >= avg:
         return 3
-    elif score >= avg - 10:
+    elif score >= avg - Decimal(10):
         return 2
     else:
         return 1
@@ -104,8 +105,8 @@ def evaluate_team_traits(solution: Solution) -> List[dict]:
     # 솔루션 평균 계산
     all_vectors = np.array([vec for team in solution for vec, _ in team])
     global_averages = {
-        "conscientiousnessMean": all_vectors[:, 0].mean(),
-        "agreeablenessMean": all_vectors[:, 1].mean(),
+        "conscientiousnessMean": Decimal(all_vectors[:, 0].mean()),
+        "agreeablenessMean": Decimal(all_vectors[:, 1].mean()),
     }
 
     # 팀 별 trait 점수 생성
@@ -120,13 +121,13 @@ def evaluate_team_traits(solution: Solution) -> List[dict]:
         neuroticism = vectors[:, 4]
 
         traits = {
-            "conscientiousnessSimilarity": conscientiousness.std(),
-            "conscientiousnessMean": conscientiousness.mean(),
-            "agreeablenessSimilarity": agreeableness.std(),
-            "agreeablenessMean": agreeableness.mean(),
-            "opennessDiversity": openness.var(),
-            "extraversionDiversity": extraversion.var(),
-            "neuroticismSimilarity": neuroticism.std(),
+            "conscientiousnessSimilarity": Decimal(conscientiousness.std()),
+            "conscientiousnessMean": Decimal(conscientiousness.mean()),
+            "agreeablenessSimilarity": Decimal(agreeableness.std()),
+            "agreeablenessMean": Decimal(agreeableness.mean()),
+            "opennessDiversity": Decimal(openness.var()),
+            "extraversionDiversity": Decimal(extraversion.var()),
+            "neuroticismSimilarity": Decimal(neuroticism.std()),
         }
 
         graded_traits = {}
@@ -134,7 +135,7 @@ def evaluate_team_traits(solution: Solution) -> List[dict]:
         for key, value in traits.items():
             if key in global_averages:
                 avg = global_averages[key]
-                graded_traits[f"{key}Score"] = round(value, 2)
+                graded_traits[f"{key}Score"] = float(value.quantize(Decimal("0.01")))
                 graded_traits[f"{key}Eval"] = grade_relative(value, avg)
             else:
                 thresholds = PERCENTILE_THRESHOLDS[key]
@@ -145,7 +146,6 @@ def evaluate_team_traits(solution: Solution) -> List[dict]:
                 graded_traits[f"{key}Score"] = score
                 graded_traits[f"{key}Eval"] = eval_score
 
-        # ✅ 팀 평가가 모두 끝난 후에 result에 한 번 추가
         result.append({
             "teamIndex": i + 1,
             "memberIds": memberIds,

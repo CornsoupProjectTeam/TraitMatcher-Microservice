@@ -9,19 +9,19 @@ FilteredSolution = Tuple[Solution, List[float], float]  # 솔루션, 솔루션 �
 
 # 가중치 상수
 WEIGHTS = {
-    "성실성 평균": 20.82,
-    "친화성 평균": 20.82,
-    "성실성 유사도": 16.67,
-    "친화성 유사도": 16.67,
-    "개방성 다양성": 12.50,
-    "외향성 다양성": 8.33,
-    "신경증 유사도": 4.19,
+    "성실성 평균": Decimal("20.82"),
+    "친화성 평균": Decimal("20.82"),
+    "성실성 유사도": Decimal("16.67"),
+    "친화성 유사도": Decimal("16.67"),
+    "개방성 다양성": Decimal("12.50"),
+    "외향성 다양성": Decimal("8.33"),
+    "신경증 유사도": Decimal("4.19"),
 }
 
 # 기준 상수
-C_MEAN_THRESHOLD = 0.70
-C_STD_THRESHOLD = 0.75
-A_STD_THRESHOLD = 0.75
+C_MEAN_THRESHOLD = Decimal("0.70")
+C_STD_THRESHOLD = Decimal("0.75")
+A_STD_THRESHOLD = Decimal("0.75")
 MAX_STD = Decimal("15.0")
 MAX_VAR = Decimal("150.0")
 
@@ -96,31 +96,31 @@ def calculate_team_score(team: Team) -> float:
     extraversion = team_vectors[:, 3]
     neuroticism = team_vectors[:, 4]
 
-    score = 0
+    score = Decimal("0.0")
 
     # 평균 점수: 평균이 높을수록 평균 점수는 높아짐
-    score += min(conscientiousness.mean() / 100, 1.0) * WEIGHTS["성실성 평균"]
-    score += min(agreeableness.mean() / 100, 1.0) * WEIGHTS["친화성 평균"]
+    score += min(Decimal(conscientiousness.mean()) / Decimal("100.0"), Decimal("1.0")) * WEIGHTS["성실성 평균"]
+    score += min(Decimal(agreeableness.mean()) / Decimal("100.0"), Decimal("1.0")) * WEIGHTS["친화성 평균"]
 
     # 유사도 점수: 표준편차가 클수록 유사도 점수는 작아짐
-    score += (1 - min(conscientiousness.std() / MAX_STD, 1.0)) * WEIGHTS["성실성 유사도"]
-    score += (1 - min(agreeableness.std() / MAX_STD, 1.0)) * WEIGHTS["친화성 유사도"]
-    score += (1 - min(neuroticism.std() / MAX_STD, 1.0)) * WEIGHTS["신경증 유사도"]
+    score += (Decimal("1.0") - min(Decimal(conscientiousness.std()) / MAX_STD, Decimal("1.0"))) * WEIGHTS["성실성 유사도"]
+    score += (Decimal("1.0") - min(Decimal(agreeableness.std()) / MAX_STD, Decimal("1.0"))) * WEIGHTS["친화성 유사도"]
+    score += (Decimal("1.0") - min(Decimal(neuroticism.std()) / MAX_STD, Decimal("1.0"))) * WEIGHTS["신경증 유사도"]
 
     # 다양성 점수: 분산이 클수록 다양성 점수는 커짐
-    score += min(openness.var() / MAX_VAR, 1.0) * WEIGHTS["개방성 다양성"]
-    score += min(extraversion.var() / MAX_VAR, 1.0) * WEIGHTS["외향성 다양성"]
+    score += min(Decimal(openness.var()) / MAX_VAR, Decimal("1.0")) * WEIGHTS["개방성 다양성"]
+    score += min(Decimal(extraversion.var()) / MAX_VAR, Decimal("1.0")) * WEIGHTS["외향성 다양성"]
 
-    return round(score, 2)
+    return float(round(score, 2))
 
 # 팀 최소 기준 평가
 def passes_minimum_criteria(traits: TeamTraits) -> bool:
     """
     get_team_traits로 얻은 값 기반으로 팀 최소 기준 판단 수행
     """
-    c_mean = traits["conscientiousness_mean"] / 100
-    c_std = traits["conscientiousness_std"] / MAX_STD
-    a_std = traits["agreeableness_std"] / MAX_STD
+    c_mean = Decimal(traits["conscientiousness_mean"]) / Decimal("100.0")
+    c_std = Decimal(traits["conscientiousness_std"]) / MAX_STD
+    a_std = Decimal(traits["agreeableness_std"]) / MAX_STD
 
     if c_mean >= C_MEAN_THRESHOLD or c_std <= C_STD_THRESHOLD or a_std <= A_STD_THRESHOLD:
         return True
@@ -134,8 +134,8 @@ def is_valid_solution(team_scores: List[float]) -> bool:
     if not team_scores:
         return False
 
-    min_score = min(team_scores)
-    avg_score = sum(team_scores) / len(team_scores)
+    min_score = Decimal(min(team_scores))
+    avg_score = Decimal(sum(team_scores)) / Decimal(len(team_scores))
 
     return (
             min_score >= DEFAULT_MIN_SCORE_THRESHOLD and

@@ -1,6 +1,7 @@
 from typing import List, Tuple
 import random
 import numpy as np
+from decimal import Decimal
 from app.services.solution_filtering_service import calculate_team_score
 
 # 타입 정의
@@ -93,8 +94,9 @@ def evaluate_solution(solution: Solution) -> float:
     """
     솔루션의 평균 팀 점수 계산
     """
-    scores = [calculate_team_score(team) for team in solution]
-    return sum(scores) / len(scores)
+    scores = [Decimal(calculate_team_score(team)) for team in solution]
+    avg_score = sum(scores) / Decimal(len(scores))
+    return float(round(avg_score, 2))
 
 def crossover(parent: Solution) -> Solution:
     """
