@@ -1,8 +1,14 @@
 from app.repository.member_repository import get_members_by_matching_id
 from app.services.solution_filtering_service import filtering_solutions
+from app.services.best_solution_selector import select_best_solution
+from app.services.trait_evaluation_service import evaluate_team_traits
+from app.config.settings import settings
 from typing import List, Tuple
+import random
 import numpy as np
 from app.models.member_view import MemberView
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 async def start_team_matching(matching_id: str, team_size:int):
     print(f"팀 매칭 연산 시작 - matchingId: {matching_id}")
@@ -26,15 +32,26 @@ async def start_team_matching(matching_id: str, team_size:int):
     print(f"솔루션 필터링 완료: {len(filtered_solutions)}개 솔루션이 남았습니다. - matchingId: {matching_id}")
 
     # 5. 최적화 기반 매칭 (유전 알고리즘)
-    # TODO: 나중에 유전 알고리즘으로 best_solution 최적화 선택
-    # best_solution =
+    best_solution = select_best_solution(filtered_solutions)
 
-    # 6. 결과 저장 및 Kafka 발행
-    # TODO: 최적화된 best_solution에서 최종 member_id 리스트 추출
-    # final_member_ids = []
-    # for team in best_solution:
-    #     for vector, member_id in team:
-    #         final_member_ids.append(member_id)
+    # 6. 팀 평가 점수 추출
+    evaluated_teams = evaluate_team_traits(best_solution)
+
+    # 6. kafka payload 생성
+    payload = {
+        "matchingId": matching_id,
+        "teams": evaluated_teams,
+        "timestamp": datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%dT%H:%M:%S+09:00")
+    }
+
+    # 7. Kafka 발행
+    settings.KAFKA_PRODUCER.send(
+        "team_matching_results",
+        value=payload
+    )
+
+    # 8. Kafka close
+    settings.KAFKA_PRODUCER.flush()
 
 def convert_members_to_vectors(members: List[MemberView]) -> List[Tuple[np.ndarray, str]]:
     """
@@ -62,22 +79,21 @@ def create_initial_solutions(
     """
     멤버 벡터 배열을 무작위로 섞은 뒤 팀 크기에 맞게 분할하여 초기 솔루션 생성
     """
+    MAX_SOLUTIONS = 10000
     num_members = len(vectors)
 
     # 총 솔루션 개수 계산
     num_teams = num_members // team_size
-    num_solutions = num_teams * multiplier
+    num_solutions = min(num_teams * multiplier, MAX_SOLUTIONS)
 
-    # 팀 분할 실시
     solutions = []
 
     for _ in range(num_solutions):
-        # numpy로 빠르게 섞고, 리스트 변환
-        shuffled_pairs = np.random.permutation(vectors).tolist()
+        shuffled_pairs = vectors.copy()
+        random.shuffle(shuffled_pairs)
 
-        # 팀 단위로 분할
         teams = [
-            shuffled_pairs[i:i+team_size]
+            shuffled_pairs[i:i + team_size]
             for i in range(0, num_members, team_size)
         ]
 
