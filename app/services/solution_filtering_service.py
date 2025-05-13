@@ -1,5 +1,6 @@
 from typing import List, Tuple, TypedDict
 import numpy as np
+from decimal import Decimal
 
 VectorWithID = Tuple[np.ndarray, str]
 Team = List[VectorWithID]
@@ -21,8 +22,8 @@ WEIGHTS = {
 C_MEAN_THRESHOLD = 0.70
 C_STD_THRESHOLD = 0.75
 A_STD_THRESHOLD = 0.75
-MAX_STD = 15.0
-MAX_VAR = 150.0
+MAX_STD = Decimal("15.0")
+MAX_VAR = Decimal("150.0")
 
 # 팀별 최소 기준 평가용 지표
 class TeamTraits(TypedDict):
