@@ -31,9 +31,13 @@ class TeamTraits(TypedDict):
     conscientiousness_std: float
     agreeableness_std: float
 
-# 솔루션 품질 기준
-DEFAULT_AVG_SCORE_THRESHOLD = 48.0
-DEFAULT_MIN_SCORE_THRESHOLD = 46.0
+# 1차 솔루션 품질 기준
+#DEFAULT_AVG_SCORE_THRESHOLD = 48.0
+#DEFAULT_MIN_SCORE_THRESHOLD = 46.0
+
+# 2차 솔루션 품질 기준
+DEFAULT_AVG_SCORE_THRESHOLD = 45.0
+DEFAULT_MIN_SCORE_THRESHOLD = 43.0
 
 # 초기 솔루션 필터링
 def filtering_solutions(
