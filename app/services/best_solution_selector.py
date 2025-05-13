@@ -34,10 +34,13 @@ def select_best_solution(
     # 초기 population 구성
     population = select_initial_population(filtered_solutions, population_size)
 
-    for _ in range(generations):
+    for generation in range(1, generations + 1):
+        print(f"[Generation {generation}/{generations}] Start evaluation")
+
         # 1. 각 솔루션의 fitness 계산
         scored_population = [(solution, evaluate_solution(solution)) for solution in population]
         scored_population.sort(key=lambda x: x[1], reverse=True)
+        print(f"[Generation {generation}] Best score: {scored_population[0][1]}")
 
         # 2. 상위 elite 개체 선택
         elites = [sol for sol, _ in scored_population[:elite_size]]
