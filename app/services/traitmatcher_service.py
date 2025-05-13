@@ -80,11 +80,13 @@ def create_initial_solutions(
     멤버 벡터 배열을 무작위로 섞은 뒤 팀 크기에 맞게 분할하여 초기 솔루션 생성
     """
     MAX_SOLUTIONS = 10000
+    MIN_SOLUTIONS = 1000
+
     num_members = len(vectors)
 
     # 총 솔루션 개수 계산
     num_teams = num_members // team_size
-    num_solutions = min(num_teams * multiplier, MAX_SOLUTIONS)
+    num_solutions = max(MIN_SOLUTIONS, min(num_teams * multiplier, MAX_SOLUTIONS))
 
     solutions = []
 
