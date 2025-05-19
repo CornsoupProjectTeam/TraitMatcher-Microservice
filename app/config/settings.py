@@ -17,7 +17,14 @@ class Settings:
             value_serializer=lambda v: json.dumps(v, ensure_ascii=False).encode("utf-8"),
         )
 
-        self.DB_ENGINE = create_async_engine(self.DATABASE_URL, echo=True)
+        self.DB_ENGINE = create_async_engine(
+            self.DATABASE_URL,
+            echo=True,
+            pool_pre_ping=True,
+            pool_recycle=1800,
+            pool_timeout=30,
+        )
+
         self.DB_SESSION: async_sessionmaker[AsyncSession] = async_sessionmaker(
             bind=self.DB_ENGINE,
             expire_on_commit=False,
