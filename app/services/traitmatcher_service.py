@@ -1,6 +1,5 @@
 from app.repository.member_repository import get_members_by_matching_id
-from app.services.solution_filtering_service import filtering_solutions
-from app.services.best_solution_selector import select_best_solution
+from app.services.SA_based_solution_selector import simulated_annealing, evaluate_solution
 from app.services.trait_evaluation_service import evaluate_team_traits
 from app.config.settings import settings
 from typing import List, Tuple
@@ -23,40 +22,57 @@ async def start_team_matching(matching_id: str, team_size:int):
     vectors = convert_members_to_vectors(members)
     print(f"멤버 데이터 벡터로 변환 완료 - matchingId: {matching_id}")
 
-    # 3. 초기 솔루션 생성
-    initial_solutions = create_initial_solutions(vectors, team_size)
-    print(f"초기 솔루션 생성 완료 - matchingId: {matching_id}")
+    best_overall_solution = None
+    highest_avg_score = -1.0
 
-    # 4. 솔루션 평가 및 필터링
-    filtered_solutions = filtering_solutions(initial_solutions)
-    print(f"솔루션 필터링 완료: {len(filtered_solutions)}개 솔루션이 남았습니다. - matchingId: {matching_id}")
+    # 3. SA 알고리즘 반복 실행 및 최고 솔루션 선택
+    for i in range(3):
+        print(f"{i+1}/3: 초기 솔루션 생성 시작")
 
-    # 5. 최적화 기반 매칭 (유전 알고리즘)
-    best_solution = select_best_solution(filtered_solutions)
+        # 무작위 단일 솔루션 생성
+        initial_solution = create_random_solution(vectors, team_size)
+        print(f"[{i+1}회차] 초기 솔루션 생성 완료")
 
-    # 6. 팀 평가 점수 추출
+        # SA 알고리즘 실행
+        current_solution = simulated_annealing(initial_solution)
+
+        # 솔루션 평균 팀 점수 계산
+        avg_score = evaluate_solution(current_solution)
+        print(f"▶ 반복 {i+1} 평균 팀 점수: {avg_score:.2f}")
+
+        # 최고 점수 갱신
+        if avg_score > highest_avg_score:
+            highest_avg_score = avg_score
+            best_overall_solution = current_solution
+
+    # 최종 선택된 베스트 솔루션이 없을 경우
+    if not best_overall_solution:
+        print("세 번의 반복 중 유효한 베스트 솔루션을 찾지 못했습니다.")
+        return
+
+    best_solution = best_overall_solution
+
+    # 4. 팀 평가 점수 추출
     evaluated_teams = evaluate_team_traits(best_solution)
 
-    # 6. kafka payload 생성
+    # 5. kafka payload 생성
     payload = {
         "matchingId": matching_id,
         "teams": evaluated_teams,
         "timestamp": datetime.now(ZoneInfo("Asia/Seoul")).strftime("%Y-%m-%dT%H:%M:%S+09:00")
     }
 
-    # 7. Kafka 발행
+    # 6. Kafka 발행
     settings.KAFKA_PRODUCER.send(
         "team_matching_results",
         value=payload
     )
 
-    # 8. Kafka close
+    # 7. Kafka close
     settings.KAFKA_PRODUCER.flush()
 
+# MemberView 리스트를 5차원 성향 벡터 배열 + 멤버 ID 튜플 리스트로 변환
 def convert_members_to_vectors(members: List[MemberView]) -> List[Tuple[np.ndarray, str]]:
-    """
-    MemberView 리스트를 5차원 성향 벡터 배열 + 멤버 ID 튜플 리스트로 변환
-    """
     vectors = []
 
     for member in members:
@@ -71,34 +87,14 @@ def convert_members_to_vectors(members: List[MemberView]) -> List[Tuple[np.ndarr
 
     return vectors
 
-def create_initial_solutions(
-        vectors: List[Tuple[np.ndarray, str]],
-        team_size: int,
-        multiplier: int = 100
-) -> List[List[List[Tuple[np.ndarray, str]]]]:
-    """
-    멤버 벡터 배열을 무작위로 섞은 뒤 팀 크기에 맞게 분할하여 초기 솔루션 생성
-    """
-    MAX_SOLUTIONS = 10000
-    MIN_SOLUTIONS = 500
+# 랜덤 솔루션 생성
+def create_random_solution(vectors: List[Tuple[np.ndarray, str]], team_size: int):
+    members = vectors[:]
+    random.shuffle(members)
 
-    num_members = len(vectors)
+    solution = []
+    for i in range(0, len(members), team_size):
+        team = members[i:i+team_size]
+        solution.append(team)
 
-    # 총 솔루션 개수 계산
-    num_teams = num_members // team_size
-    num_solutions = max(MIN_SOLUTIONS, min(num_teams * multiplier, MAX_SOLUTIONS))
-
-    solutions = []
-
-    for _ in range(num_solutions):
-        shuffled_pairs = vectors.copy()
-        random.shuffle(shuffled_pairs)
-
-        teams = [
-            shuffled_pairs[i:i + team_size]
-            for i in range(0, num_members, team_size)
-        ]
-
-        solutions.append(teams)
-
-    return solutions
+    return solution
