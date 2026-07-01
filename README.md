@@ -14,6 +14,4 @@ Simulated Annealing 알고리즘으로 더 적합한 팀 구성을 찾고,
 - Python 3.11.0
 - FastAPI
 - Kafka (비동기 메시지 브로커)
-- SQLAlchemy / asyncpg
-- NumPy
-- JWT 인증
+- PostgreSQL
