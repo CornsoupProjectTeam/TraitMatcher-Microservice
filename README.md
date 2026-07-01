@@ -1,6 +1,6 @@
 # [최유진] TraitMatcher Microservice
 <br>
-(Simulated Annealing 기반 팀매칭 자동화 엔진)
+## (Simulated Annealing 기반 팀매칭 자동화 엔진)
 
 이 프로젝트는 확장 가능한 MSA 구조 위에서 대규모 유저 데이터를 처리하며,
 Simulated Annealing 알고리즘 기반의 전역 최적화를 수행하여
